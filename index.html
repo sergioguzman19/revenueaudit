@@ -199,6 +199,24 @@ h1{margin:0 0 var(--sp-06)}
 .metric.corte .big{color:var(--red)}
 .metric.firmeza .big{color:var(--amber)}
 
+.explainer{background:var(--bg-alt);border-radius:var(--r-lg);padding:var(--sp-07);margin-top:var(--sp-08);
+  animation:riseIn var(--dur-slow-01) var(--ease-expr-in) both}
+.explainer .t-label{color:var(--navy-80);margin:0 0 var(--sp-05)}
+:root[data-theme="dark"] .explainer .t-label{color:var(--ice)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .explainer .t-label{color:var(--ice)}}
+.explainer p{margin:0 0 var(--sp-05);font-size:1.0625rem;line-height:1.7}
+.explainer p:last-child{margin-bottom:0}
+
+.ctx.why{border-left-color:var(--red)}
+.ctx-h{margin:0 0 var(--sp-06);font-size:clamp(1.25rem,1.1rem + .6vw,1.5rem);font-weight:600;color:var(--navy-80)}
+:root[data-theme="dark"] .ctx-h{color:var(--ice)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ctx-h{color:var(--ice)}}
+.qa{border-top:1px solid var(--border-subtle);padding-top:var(--sp-05)}
+.qa-q{margin:0 0 var(--sp-03);font-size:.9375rem;font-weight:600;color:var(--text-secondary)}
+.qa-a{margin:0 0 var(--sp-06);font-size:1.0625rem;line-height:1.7}
+.qa-a:last-child{margin-bottom:0}
+.legend i.hollow{background:transparent;box-shadow:inset 0 0 0 2.5px var(--amber)}
+
 .ctx{background:var(--bg-alt);border-left:3px solid var(--amber);border-radius:0 var(--r-lg) var(--r-lg) 0;
   padding:var(--sp-07);margin-top:var(--sp-08)}
 .ctx .t-label{color:var(--navy-80);margin:0 0 var(--sp-05)}
@@ -280,6 +298,12 @@ footer{padding:var(--sp-08) 0 var(--sp-11);color:var(--text-secondary);font-size
   </div>
 
   <div class="wrap">
+    <div class="explainer">
+      <p class="t-label">Qué estás viendo</p>
+      <p>Tu operación comercial no es un conjunto de números sueltos: es una cadena. El dinero que cerraste se explica por tu tasa de cierre. Esa tasa se explica por cuántas oportunidades trabajaste. Esas oportunidades se explican por cuántos interesados calificaste, y así hacia atrás hasta el origen.</p>
+      <p>Cada eslabón explica al anterior. Por eso el diagnóstico camina en reversa: empieza en el resultado que no obtuviste y retrocede hasta encontrar el primer lugar donde ya no hay información.</p>
+    </div>
+
     <div class="metrics">
       <div class="metric corte">
         <p class="t-label">Punto de corte</p>
@@ -295,20 +319,37 @@ footer{padding:var(--sp-08) 0 var(--sp-11);color:var(--text-secondary);font-size
 
     <div class="funnel" id="funnel"></div>
     <div class="legend">
-      <span><i style="background:var(--green)"></i>Dato firme</span>
-      <span><i style="background:var(--amber)"></i>Estimación</span>
-      <span><i style="background:var(--amber);box-shadow:0 0 0 1.5px var(--amber)"></i>Rango amplio o sin versión única</span>
-      <span><i style="background:var(--red)"></i>Sin dato</span>
+      <span><i style="background:var(--green)"></i>Lo sabes con precisión</span>
+      <span><i style="background:var(--amber)"></i>Lo estimas dentro de un rango cerrado</span>
+      <span><i class="hollow"></i>Rango tan amplio que no es una estimación</span>
+      <span><i style="background:var(--red)"></i>No hay dato</span>
     </div>
 
     <div class="ctx">
-      <p class="t-label">Qué significa tu punto de corte</p>
+      <p class="t-label">El eslabón donde se corta la cadena</p>
+      <h3 class="ctx-h" id="ctxStage"></h3>
+      <div class="qa">
+        <p class="qa-q">¿Qué es este indicador?</p>
+        <p class="qa-a" id="ctxWhat"></p>
+        <p class="qa-q">¿Dónde vive ese dato en tu empresa?</p>
+        <p class="qa-a" id="ctxWhere"></p>
+      </div>
+      <p class="t-label" style="margin-top:var(--sp-07)">Qué implica que se corte aquí</p>
       <div id="ctxBody"></div>
     </div>
 
-    <div class="ctx gov" id="govBox">
-      <p class="t-label">Qué significa la firmeza de tus datos</p>
-      <div id="govBody"></div>
+    <div class="ctx why" id="whyBox">
+      <p class="t-label">Por qué este vacío pesa más que los otros</p>
+      <div id="whyBody"></div>
+    </div>
+
+    <div class="ctx gov">
+      <p class="t-label">Qué tan firme es lo que sí sabes</p>
+      <div class="qa">
+        <p class="qa-q">¿Qué mide el índice de firmeza?</p>
+        <p class="qa-a">No mide cuánto sabes, sino qué tan sólido es lo que sabes. Un dato exacto suma completo, una estimación con rango cerrado suma la mitad, y un rango demasiado amplio o un criterio sin versión única no suman: no son información, son recuerdos.</p>
+      </div>
+      <div id="govBody" style="margin-top:var(--sp-06)"></div>
     </div>
 
     <div class="block">
@@ -393,6 +434,26 @@ const OPTS_QUAL = [
   { label:"No está definido", sub:"Se resuelve caso por caso", v:"unknown" }
 ];
 
+/* Explicación en lenguaje llano por eslabón */
+const EXPLAIN = [
+{ what:"Es la diferencia entre lo que esperabas facturar en el trimestre y lo que realmente facturaste.",
+  where:"Vive en la proyección que hiciste al empezar el trimestre, comparada contra el reporte de ventas al cerrarlo. Si nunca se escribió esa proyección, el dato no existe en ninguna parte." },
+{ what:"Es el porcentaje de negocios que terminan en venta. Si tu equipo trabajó veinte oportunidades y cerró cuatro, tu tasa de cierre es del veinte por ciento.",
+  where:"Sale de dividir las ventas cerradas entre las oportunidades trabajadas en el mismo periodo. Vive en el CRM, o se calcula a mano si llevas registro de las dos cifras por separado." },
+{ what:"Es cuántos negocios reales estuvieron activos en el periodo: no contactos guardados, sino conversaciones con alguien concreto que tenía una necesidad concreta.",
+  where:"Vive en el CRM o en un tablero de ventas. Cuando no existe ninguno de los dos, vive repartido entre las libretas, los chats y la memoria de cada vendedor." },
+{ what:"Es qué proporción de los interesados que llegan se convierte en un negocio que vale la pena trabajar.",
+  where:"Sale de comparar cuántos contactos entraron contra cuántos pasaron a ser oportunidades. Exige registrar la entrada, no solo el cierre, que es lo que casi nunca se hace." },
+{ what:"Es la regla que define cuándo un interesado merece tiempo de tu equipo comercial y cuándo no.",
+  where:"No vive en un número, vive en un acuerdo. O está escrita y todos la aplican igual, o cada vendedor decide por su cuenta y entonces no hay regla, hay costumbres distintas." },
+{ what:"Es qué tanto de lo que entra puedes rastrear hasta el canal que lo originó: un referido, LinkedIn, la web, un evento.",
+  where:"Vive en el campo de origen del CRM o en las etiquetas de tus campañas. Cuando no hay sistema, vive en preguntarle a cada cliente cómo llegó, y casi nadie lo pregunta." },
+{ what:"Es cuántas veces, en promedio, tu equipo contacta a un negocio antes de que se cierre o se pierda.",
+  where:"Vive en el registro de llamadas, correos y reuniones asociados a cada oportunidad. Si esos contactos no quedan registrados en un lugar común, el dato no se puede reconstruir." },
+{ what:"Es si alguien revisa que el seguimiento planeado realmente se haya hecho, y no solo que estuviera previsto.",
+  where:"No vive en un dato, vive en una rutina: una reunión semanal de pipeline, un reporte que alguien abre, una alerta que salta cuando una oportunidad lleva días sin movimiento." }
+];
+
 const CTX = [
 { title:"Resultado", next:"Antes de medir nada más, hay que construir la referencia: qué esperabas facturar y contra qué se compara lo que pasó.", body:[
   "Si no existe una cifra de meta contra la cual medir el cierre, el resultado comercial se evalúa por sensación. Hubo un buen trimestre o un mal trimestre, pero no hay una distancia medible entre lo esperado y lo ocurrido.",
@@ -437,11 +498,28 @@ const CTX_FULL = {
 ]};
 
 /* --- ITERACIÓN 4 · gobierno de datos --- */
+function plural(n, sing, plu){ return n + ' ' + (n === 1 ? sing : plu); }
+
+/* Por qué el primer vacío pesa más que los demás */
+function whyText(firstGap, otherGaps){
+  const out = [];
+  out.push("La cadena es causal: cada eslabón solo se puede interpretar si conoces el anterior. Saber cuántas oportunidades trabajaste no te sirve para diagnosticar si no sabes qué porcentaje de ellas cerraba, porque no tienes con qué comparar. Por eso el primer vacío, y no el más grave en apariencia, es el que detiene el diagnóstico.");
+  if (otherGaps.length){
+    const names = otherGaps.map(n=>Q[n].stage).join(', ');
+    out.push("Más adelante en tu cadena hay " + plural(otherGaps.length,'otro vacío','otros vacíos') + ": " + names + ". Son reales y habrá que resolverlos, pero ordenarlos antes de cerrar el primero es trabajo que se pierde: cualquier cifra que reconstruyas más abajo seguirá sin poder conectarse con el resultado.");
+  } else {
+    out.push("En tu caso este es el único vacío de la cadena. Todo lo demás está medido, lo que significa que resolver este punto te devuelve la trazabilidad completa de tu operación comercial.");
+  }
+  return out;
+}
+
 function govText(exact, approx, weak, unknown, weakNum, weakQual){
   const total = Q.length;
+  const blandos = approx + weak;
+
   if (weak >= 3){
-    const first = weakQual > 0 && weakNum > 0
-      ? "Tienes " + weakNum + " estimaciones con rangos tan amplios que no son estimaciones, y " + weakQual + " definiciones que existen pero que cada persona aplica a su manera. Son el mismo problema en dos formas: información que no se reproduce igual dos veces."
+    const first = (weakQual > 0 && weakNum > 0)
+      ? "Tienes " + plural(weakNum,'estimación con un rango','estimaciones con rangos') + " tan " + (weakNum===1?'amplio':'amplios') + " que no " + (weakNum===1?'es una estimación':'son estimaciones') + ", y " + plural(weakQual,'definición que existe','definiciones que existen') + " pero que cada persona aplica a su manera. Son el mismo problema en dos formas: información que no se reproduce igual dos veces."
       : (weakQual >= 3
         ? "Tus definiciones existen, pero no hay una versión única de ellas. Un criterio que cada persona aplica a su manera no es un criterio: es una convención informal que cambia según quién la ejecute."
         : "De tus estimaciones, " + weakNum + " tienen rangos tan amplios que no son estimaciones: son ausencias de registro con forma de dato. Decir que ejecutas entre tres y doce acciones por oportunidad no describe tu operación, describe que nadie la está midiendo.");
@@ -449,16 +527,29 @@ function govText(exact, approx, weak, unknown, weakNum, weakQual){
       "Esto es un problema de gobierno de datos, no de visibilidad. La información existe en algún lugar, pero no en un sistema que produzca el mismo resultado mañana. Cualquier decisión tomada sobre ella es, en la práctica, una decisión tomada sobre una intuición."
     ];
   }
-  if (approx + weak >= Math.ceil(total/2)) return [
-    "Respondiste " + (approx+weak) + " de " + total + " preguntas con estimaciones. La información existe, pero no está consolidada: vive en la memoria de alguien o repartida entre hojas de cálculo que nadie reconcilia.",
+
+  if (blandos >= Math.ceil(total/2)) return [
+    "Respondiste " + blandos + " de " + total + " preguntas con estimaciones. La información existe, pero no está consolidada: vive en la memoria de alguien o repartida entre hojas de cálculo que nadie reconcilia.",
     "El síntoma no es que falte el dato, es que no hay una fuente única que lo produzca igual cada vez. Mientras eso siga así, dos personas de tu equipo pueden reportar cifras distintas sobre el mismo trimestre y ambas tener razón."
   ];
-  if (approx + weak > 0) return [
-    "Tienes " + exact + " datos firmes y " + (approx+weak) + " estimaciones. La base es sólida: la mayoría de tu operación está medida con precisión.",
+
+  if (unknown >= 3) return [
+    "De los ocho eslabones, " + plural(exact,'está medido con precisión','están medidos con precisión') + " y " + plural(unknown,'no tiene dato','no tienen dato') + ". Lo que mides, lo mides bien: el problema no es la calidad de tu información sino su cobertura.",
+    "Una operación con buena precisión y baja cobertura suele indicar que hay un sistema funcionando, pero solo sobre una parte del proceso. Normalmente sobre el final, donde ya hay venta, y no sobre el principio, donde todavía no hay nada que registrar."
+  ];
+
+  if (unknown > 0) return [
+    "Tienes " + plural(exact,'dato firme','datos firmes') + ", " + plural(blandos,'estimación','estimaciones') + " y " + plural(unknown,'eslabón sin dato','eslabones sin dato') + ". La base es razonable: la mayor parte de tu operación está medida.",
+    "Los vacíos marcan dónde conviene ordenar primero, y las estimaciones señalan puntos donde la decisión depende de que alguien recuerde bien en lugar de consultar una fuente."
+  ];
+
+  if (blandos > 0) return [
+    "Tienes " + plural(exact,'dato firme','datos firmes') + " y " + plural(blandos,'estimación','estimaciones') + ", sin vacíos. La base es sólida: toda tu cadena tiene información, y la mayoría está medida con precisión.",
     "Las estimaciones marcan dónde conviene ordenar primero. No son un problema en sí mismas, pero cada una es un punto donde la decisión depende de que alguien recuerde bien."
   ];
+
   return [
-    "Respondiste todo con datos firmes. Tu operación está medida, no estimada, y eso es poco común en empresas de esta etapa.",
+    "Respondiste los ocho eslabones con datos firmes. Tu operación está medida, no estimada, y eso es poco común en empresas de esta etapa.",
     "El trabajo que sigue no es de captura sino de análisis: usar esos números para anticipar, no solo para reportar."
   ];
 }
@@ -558,16 +649,34 @@ function finish(){
   const unknown = answers.filter(a=>a.v==='unknown').length;
   const firmeza = Math.round((exact + approx*0.5) / Q.length * 100);
 
-  document.getElementById('rTitle').textContent = full ? 'Recorriste la cadena completa.' : 'Tu cadena se rompe aquí.';
+  document.getElementById('rTitle').textContent = full ? 'Recorriste la cadena completa.' : 'Tu cadena se corta en el eslabón ' + (firstGap+1) + '.';
   document.getElementById('rStage').textContent = full ? 'Sin vacíos de información' : c.title;
 
   document.getElementById('mCorte').textContent = full ? '—' : String(firstGap+1).padStart(2,'0');
   document.getElementById('mCorteCap').textContent = full
-    ? 'No hay eslabones sin dato.'
-    : 'Primer eslabón sin dato: ' + c.title + '.';
+    ? 'Los ocho eslabones tienen información.'
+    : 'De ocho eslabones, el primero sin dato es ' + c.title + '.';
   document.getElementById('mFirm').textContent = firmeza + '%';
   document.getElementById('mFirmCap').textContent =
-    exact + ' firmes · ' + approx + ' estimados · ' + weak + ' rangos amplios · ' + unknown + ' sin dato';
+    plural(exact,'exacto','exactos') + ' · ' + plural(approx,'estimado','estimados') + ' · ' +
+    plural(weak,'rango amplio','rangos amplios') + ' · ' + plural(unknown,'sin dato','sin dato');
+
+  // explicación del eslabón
+  const ex = full ? null : EXPLAIN[firstGap];
+  document.getElementById('ctxStage').textContent = full ? 'Ningún eslabón quedó sin información' : c.title;
+  document.getElementById('ctxWhat').textContent  = full ? 'Respondiste los ocho eslabones de la cadena.' : ex.what;
+  document.getElementById('ctxWhere').textContent = full ? 'Toda la información existe en algún sistema que puedes consultar.' : ex.where;
+
+  // por qué el primero pesa más
+  const otherGaps = answers.map((a,n)=>a.v==='unknown'?n:-1).filter(n=>n>firstGap && n!==-1);
+  const wb = document.getElementById('whyBody');
+  const whyBox = document.getElementById('whyBox');
+  if (full){ whyBox.style.display='none'; }
+  else {
+    whyBox.style.display='block';
+    wb.innerHTML='';
+    whyText(firstGap, otherGaps).forEach(p=>{ const el=document.createElement('p'); el.textContent=p; wb.appendChild(el); });
+  }
 
   // embudo completo
   const f = document.getElementById('funnel');
