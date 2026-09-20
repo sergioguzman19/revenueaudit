@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diagnóstico en Reversa — Beyond B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ==================================================================
+   SISTEMA DE DISEÑO · tokens IBM Carbon · paleta Beyond B
+   ================================================================== */
+:root{
+  --navy-100:#12162E; --navy-80:#1E2761; --navy-60:#2A3576; --navy-40:#4A5699;
+  --ice:#CADCFC; --amber:#C9862B; --amber-hi:#E09A38; --green:#1B8A5A; --red:#B23A48;
+  --bg:#FFFFFF; --bg-alt:#F4F6FB; --bg-inverse:var(--navy-80);
+  --text-primary:#161616; --text-secondary:#5A6480; --text-on-color:#FFFFFF;
+  --border-subtle:#E0E5F2; --border-strong:#C3CBDE; --field:#FFFFFF; --focus:var(--amber);
+
+  --sp-01:.125rem; --sp-02:.25rem; --sp-03:.5rem;  --sp-04:.75rem;
+  --sp-05:1rem;    --sp-06:1.5rem; --sp-07:2rem;   --sp-08:2.5rem;
+  --sp-09:3rem;    --sp-10:4rem;   --sp-11:5rem;   --sp-12:6rem;
+
+  --dur-fast-01:70ms;  --dur-fast-02:110ms; --dur-mod-01:150ms;
+  --dur-mod-02:240ms;  --dur-slow-01:400ms; --dur-slow-02:700ms;
+  --ease-prod-std:cubic-bezier(.2,0,.38,.9);
+  --ease-expr-std:cubic-bezier(.4,.14,.3,1);
+  --ease-expr-in:cubic-bezier(0,0,.3,1);
+
+  --r-sm:4px; --r-md:8px; --r-lg:12px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1120; --bg-alt:#181B2C; --text-primary:#F2F4FA; --text-secondary:#98A1BE;
+    --border-subtle:#282D42; --border-strong:#3A4058; --field:#181B2C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1120; --bg-alt:#181B2C; --text-primary:#F2F4FA; --text-secondary:#98A1BE;
+  --border-subtle:#282D42; --border-strong:#3A4058; --field:#181B2C;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text-primary);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:1rem;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:46rem;margin:0 auto;padding:0 var(--sp-05)}
+@media(min-width:42rem){.wrap{padding:0 var(--sp-07)}}
+
+.t-label{font-size:.75rem;letter-spacing:.11em;text-transform:uppercase;font-weight:600;line-height:1.3}
+.t-body-lg{font-size:clamp(1.0625rem,.98rem + .42vw,1.1875rem);line-height:1.62;font-weight:300}
+.t-h3{font-size:clamp(1.125rem,1.05rem + .36vw,1.3125rem);line-height:1.35;font-weight:600;letter-spacing:-.005em}
+.t-h4{font-size:clamp(1.375rem,1.18rem + .95vw,1.875rem);line-height:1.27;font-weight:600;letter-spacing:-.012em}
+.t-h6{font-size:clamp(1.875rem,1.35rem + 2.6vw,3.25rem);line-height:1.09;font-weight:700;letter-spacing:-.028em}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+.screen{display:none}
+.screen.on{display:block;animation:screenIn var(--dur-slow-01) var(--ease-expr-in) both}
+@keyframes screenIn{from{opacity:0;transform:translate3d(0,14px,0)}to{opacity:1;transform:none}}
+#intro.on{display:grid;min-height:100svh;place-items:center;padding:var(--sp-09) 0}
+.stack > *{animation:riseIn var(--dur-slow-01) var(--ease-expr-in) both}
+.stack > *:nth-child(1){animation-delay:60ms}.stack > *:nth-child(2){animation-delay:140ms}
+.stack > *:nth-child(3){animation-delay:210ms}.stack > *:nth-child(4){animation-delay:280ms}
+.stack > *:nth-child(5){animation-delay:350ms}.stack > *:nth-child(6){animation-delay:420ms}
+@keyframes riseIn{from{opacity:0;transform:translate3d(0,18px,0)}to{opacity:1;transform:none}}
+
+.eyebrow{color:var(--amber);margin:0 0 var(--sp-06)}
+.eyebrow::after{content:"";display:block;width:2.25rem;height:2px;background:var(--amber);margin-top:var(--sp-04);transform-origin:left;animation:ruleIn var(--dur-slow-02) var(--ease-expr-std) both;animation-delay:.3s}
+@keyframes ruleIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+h1{margin:0 0 var(--sp-06)}
+.lede{color:var(--text-secondary);margin:0 0 var(--sp-04);max-width:54ch}
+.foot-note{color:var(--text-secondary);font-size:.875rem;margin-top:var(--sp-07);padding-top:var(--sp-05);border-top:1px solid var(--border-subtle)}
+
+.btn{--bg-btn:var(--navy-80);position:relative;appearance:none;border:0;cursor:pointer;font:inherit;font-weight:600;
+  background:var(--bg-btn);color:var(--text-on-color);padding:var(--sp-05) var(--sp-07);border-radius:var(--r-md);
+  font-size:1rem;display:inline-flex;align-items:center;gap:var(--sp-04);overflow:hidden;text-decoration:none;
+  transition:background var(--dur-mod-01) var(--ease-prod-std),transform var(--dur-fast-02) var(--ease-prod-std),box-shadow var(--dur-mod-01) var(--ease-prod-std)}
+.btn::after{content:"";position:absolute;inset:0;background:#fff;opacity:0;transition:opacity var(--dur-fast-02) var(--ease-prod-std)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px -8px rgba(18,22,46,.45)}
+.btn:hover::after{opacity:.08}
+.btn:active{transform:translateY(0) scale(.988)}
+.btn:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.btn.amber{--bg-btn:var(--amber)}
+.btn.ghost{--bg-btn:transparent;color:var(--text-primary);box-shadow:inset 0 0 0 1.5px var(--border-strong)}
+.btn.ghost:hover{--bg-btn:var(--bg-alt)}
+.btn.block{display:flex;width:100%;justify-content:center}
+.btn.sm{padding:var(--sp-04) var(--sp-05);font-size:.9375rem}
+.btn .arrow{transition:transform var(--dur-mod-01) var(--ease-prod-std)}
+.btn:hover .arrow{transform:translateX(4px)}
+
+.qhead{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);
+  padding:var(--sp-06) 0 var(--sp-04);border-bottom:1px solid var(--border-subtle)}
+.track{height:2px;background:var(--border-subtle);border-radius:2px;overflow:hidden}
+.track > i{display:block;height:100%;width:0;background:var(--amber);border-radius:2px;transition:width var(--dur-slow-01) var(--ease-expr-std)}
+.qmeta{display:flex;justify-content:space-between;align-items:baseline;margin-top:var(--sp-04);gap:var(--sp-05)}
+.qmeta .stage{color:var(--navy-80)}
+:root[data-theme="dark"] .qmeta .stage{color:var(--ice)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .qmeta .stage{color:var(--ice)}}
+.qmeta .count{font-size:.8125rem;color:var(--text-secondary)}
+
+.qbody{padding:var(--sp-08) 0 var(--sp-10)}
+#qtext{margin:0 0 var(--sp-04)}
+#qhint{color:var(--text-secondary);margin:0 0 var(--sp-05);font-size:.9375rem}
+
+/* --- ITERACIÓN 2 · microcopy explicativo --- */
+.define{
+  background:var(--bg-alt);border-radius:var(--r-md);padding:var(--sp-05);
+  margin:0 0 var(--sp-06);font-size:.9375rem;line-height:1.6;color:var(--text-secondary);
+  border-left:3px solid var(--navy-40);
+}
+.define b{color:var(--text-primary);font-weight:600}
+
+.opts{display:flex;flex-direction:column;gap:var(--sp-04)}
+.opt{display:flex;align-items:center;gap:var(--sp-05);width:100%;text-align:left;cursor:pointer;
+  background:var(--field);color:var(--text-primary);font:inherit;font-size:1rem;border:0;
+  box-shadow:inset 0 0 0 1.5px var(--border-subtle);border-radius:var(--r-md);padding:var(--sp-05);
+  transition:box-shadow var(--dur-mod-01) var(--ease-prod-std),background var(--dur-mod-01) var(--ease-prod-std),transform var(--dur-fast-02) var(--ease-prod-std);
+  animation:optIn var(--dur-mod-02) var(--ease-expr-in) both}
+.opt:nth-child(1){animation-delay:.05s}.opt:nth-child(2){animation-delay:.11s}.opt:nth-child(3){animation-delay:.17s}
+@keyframes optIn{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
+.opt:hover{box-shadow:inset 0 0 0 1.5px var(--navy-40);background:var(--bg-alt);transform:translateX(3px)}
+.opt:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.opt .dot{width:1.125rem;height:1.125rem;border-radius:50%;flex:0 0 auto;position:relative;
+  box-shadow:inset 0 0 0 2px var(--border-strong);transition:box-shadow var(--dur-mod-01) var(--ease-prod-std)}
+.opt .dot::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--navy-80);transform:scale(0);transition:transform var(--dur-fast-02) var(--ease-prod-std)}
+.opt:hover .dot{box-shadow:inset 0 0 0 2px var(--navy-80)}
+.opt:hover .dot::after{transform:scale(1)}
+.opt .sublabel{display:block;font-size:.8125rem;color:var(--text-secondary);margin-top:2px;font-weight:400}
+
+/* --- ITERACIÓN 3 · cualificador de rango --- */
+.range{margin-top:var(--sp-06);animation:riseIn var(--dur-mod-02) var(--ease-expr-in) both}
+.range .q{font-size:.9375rem;color:var(--text-secondary);margin:0 0 var(--sp-04)}
+.range .row{display:flex;align-items:center;gap:var(--sp-04);flex-wrap:wrap}
+.range input{width:6.5rem;font:inherit;font-family:"IBM Plex Mono",monospace;font-size:1rem;
+  padding:var(--sp-04) var(--sp-05);border:0;border-radius:var(--r-md);background:var(--field);
+  color:var(--text-primary);box-shadow:inset 0 0 0 1.5px var(--border-subtle);
+  transition:box-shadow var(--dur-mod-01) var(--ease-prod-std)}
+.range input:focus{outline:0;box-shadow:inset 0 0 0 2px var(--amber)}
+.range .sep{color:var(--text-secondary);font-size:.9375rem}
+
+.back{margin-top:var(--sp-07);background:none;border:0;color:var(--text-secondary);font:inherit;
+  font-size:.9375rem;cursor:pointer;padding:var(--sp-03) 0;display:inline-flex;align-items:center;gap:var(--sp-03);
+  transition:color var(--dur-mod-01) var(--ease-prod-std)}
+.back:hover{color:var(--text-primary)}
+.back span{transition:transform var(--dur-mod-01) var(--ease-prod-std)}
+.back:hover span{transform:translateX(-3px)}
+
+/* --- resultado --- */
+.rhead{background:var(--bg-inverse);color:var(--text-on-color);padding:var(--sp-10) 0 var(--sp-09);position:relative;overflow:hidden}
+.rhead::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 8% 0%,rgba(202,220,252,.14),transparent 62%)}
+.rhead .wrap{position:relative}
+.rhead .eyebrow{color:var(--ice)}.rhead .eyebrow::after{background:var(--ice)}
+#rTitle{margin:0 0 var(--sp-03);color:#fff}
+#rStage{margin:0;color:var(--amber-hi);font-weight:600;font-size:clamp(1.125rem,1rem + .6vw,1.5rem)}
+
+.funnel{padding:var(--sp-08) 0 var(--sp-03)}
+.step{display:flex;align-items:flex-start;gap:var(--sp-04);padding:var(--sp-04) var(--sp-05);
+  border-radius:var(--r-md);margin-bottom:var(--sp-03);font-size:.9375rem;line-height:1.45;
+  animation:stepIn var(--dur-mod-02) var(--ease-expr-in) both}
+@keyframes stepIn{from{opacity:0;transform:translate3d(-10px,0,0)}to{opacity:1;transform:none}}
+.step .n{width:1.5rem;height:1.5rem;border-radius:50%;flex:0 0 auto;margin-top:.05rem;
+  display:grid;place-items:center;font-size:.75rem;font-weight:600;font-family:"IBM Plex Mono",monospace}
+.step.exact{background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green)}
+.step.exact .n{background:var(--green);color:#fff}
+.step.approx{background:color-mix(in srgb,var(--amber) 13%,transparent);color:#8A5D1A}
+.step.approx .n{background:var(--amber);color:#fff}
+:root[data-theme="dark"] .step.approx{color:var(--amber-hi)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .step.approx{color:var(--amber-hi)}}
+.step.weak{background:color-mix(in srgb,var(--amber) 13%,transparent);color:#8A5D1A;box-shadow:inset 0 0 0 1.5px var(--amber)}
+.step.weak .n{background:var(--amber);color:#fff}
+:root[data-theme="dark"] .step.weak{color:var(--amber-hi)}
+.step.unknown{background:var(--red);color:#fff;font-weight:600}
+.step.unknown .n{background:#fff;color:var(--red)}
+.step .stage-tag{font-weight:600;margin-right:.35rem}
+.step .badge{display:inline-block;font-size:.6875rem;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;margin-left:.4rem;opacity:.85;font-family:"IBM Plex Mono",monospace}
+
+.legend{display:flex;gap:var(--sp-06);flex-wrap:wrap;margin-top:var(--sp-06);font-size:.8125rem;color:var(--text-secondary)}
+.legend i{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;margin-right:.4rem}
+
+/* --- métricas --- */
+.metrics{display:grid;grid-template-columns:1fr;gap:var(--sp-05);margin-top:var(--sp-08)}
+@media(min-width:34rem){.metrics{grid-template-columns:1fr 1fr}}
+.metric{border-radius:var(--r-lg);padding:var(--sp-07);box-shadow:inset 0 0 0 1.5px var(--border-subtle);
+  animation:riseIn var(--dur-slow-01) var(--ease-expr-in) both}
+.metric:nth-child(2){animation-delay:.1s}
+.metric .t-label{color:var(--text-secondary);margin:0 0 var(--sp-04)}
+.metric .big{font-family:"IBM Plex Mono",monospace;font-size:clamp(2rem,1.5rem + 2vw,2.75rem);
+  font-weight:600;line-height:1;margin:0 0 var(--sp-03);letter-spacing:-.02em}
+.metric .cap{font-size:.9375rem;color:var(--text-secondary);margin:0;line-height:1.5}
+.metric.corte .big{color:var(--red)}
+.metric.firmeza .big{color:var(--amber)}
+
+.ctx{background:var(--bg-alt);border-left:3px solid var(--amber);border-radius:0 var(--r-lg) var(--r-lg) 0;
+  padding:var(--sp-07);margin-top:var(--sp-08)}
+.ctx .t-label{color:var(--navy-80);margin:0 0 var(--sp-05)}
+:root[data-theme="dark"] .ctx .t-label{color:var(--ice)}
+.ctx p{margin:0 0 var(--sp-05);font-size:1.0625rem;line-height:1.7}
+.ctx p:last-child{margin-bottom:0}
+.ctx.gov{border-left-color:var(--navy-40)}
+
+.block{padding:var(--sp-09) 0;border-top:1px solid var(--border-subtle)}
+.block > .t-h3{margin:0 0 var(--sp-04)}
+.block > .sub{color:var(--text-secondary);margin:0 0 var(--sp-06);font-size:.9375rem}
+.card{border-radius:var(--r-lg);padding:var(--sp-07);background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--border-subtle);
+  transition:box-shadow var(--dur-mod-02) var(--ease-prod-std)}
+.card:hover{box-shadow:inset 0 0 0 1.5px var(--border-strong)}
+.card.inverse{background:var(--bg-inverse);color:var(--text-on-color);box-shadow:none}
+.card.inverse .sub{color:var(--ice)}
+.card .t-h3{margin:0 0 var(--sp-04)}
+.card .sub{color:var(--text-secondary);margin:0 0 var(--sp-06);font-size:.9375rem;line-height:1.6}
+.field-row{display:flex;gap:var(--sp-04);flex-wrap:wrap}
+input[type=email]{flex:1 1 14rem;min-width:0;font:inherit;font-size:1rem;padding:var(--sp-05);
+  border-radius:var(--r-md);border:0;box-shadow:inset 0 0 0 1.5px var(--border-subtle);
+  background:var(--field);color:var(--text-primary);transition:box-shadow var(--dur-mod-01) var(--ease-prod-std)}
+input[type=email]::placeholder{color:var(--text-secondary)}
+input[type=email]:focus{outline:0;box-shadow:inset 0 0 0 2px var(--amber)}
+.fineprint{font-size:.8125rem;color:var(--text-secondary);margin:var(--sp-05) 0 0}
+.card.inverse .fineprint{color:#8E9AC2}
+.ok-msg{display:none;align-items:center;gap:var(--sp-04);background:color-mix(in srgb,var(--green) 16%,transparent);
+  color:#7BE3B4;border-radius:var(--r-md);padding:var(--sp-05);font-size:.9375rem;font-weight:600;margin-top:var(--sp-05)}
+.ok-msg.on{display:flex;animation:riseIn var(--dur-mod-02) var(--ease-expr-in) both}
+footer{padding:var(--sp-08) 0 var(--sp-11);color:var(--text-secondary);font-size:.8125rem;border-top:1px solid var(--border-subtle)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<section id="intro" class="screen on">
+  <div class="wrap stack">
+    <p class="eyebrow t-label">Diagnóstico en Reversa</p>
+    <h1 class="t-h6">Tu cierre no fue el que esperabas.<br>Vamos a caminar hacia atrás.</h1>
+    <p class="lede t-body-lg">Ocho preguntas sobre tu propio sistema comercial, desde el resultado hacia el origen. No medimos qué tanto sabes de ventas: medimos qué tan firme es la información con la que tomas decisiones.</p>
+    <p class="lede t-body-lg">No hay puntaje ni respuestas correctas. Al final ves dos cosas: dónde se rompe tu cadena y qué tan sólido es lo que sí sabes.</p>
+    <div><button class="btn amber" onclick="start()">Empezar <span class="arrow">→</span></button></div>
+    <p class="foot-note">Cuatro minutos. Anónimo. No pedimos datos para mostrarte el resultado.</p>
+  </div>
+</section>
+
+<section id="question" class="screen">
+  <div class="qhead">
+    <div class="wrap">
+      <div class="track"><i id="prog"></i></div>
+      <div class="qmeta">
+        <span class="stage t-label" id="stage"></span>
+        <span class="count mono" id="counter"></span>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="qbody">
+      <h2 class="t-h4" id="qtext"></h2>
+      <p id="qhint"></p>
+      <div class="define" id="define"></div>
+      <div class="opts" id="opts"></div>
+      <div id="rangeBox"></div>
+      <button class="back" onclick="back()" id="backBtn"><span>←</span> Anterior</button>
+    </div>
+  </div>
+</section>
+
+<section id="result" class="screen">
+  <div class="rhead">
+    <div class="wrap">
+      <p class="eyebrow t-label">Tu resultado</p>
+      <h2 class="t-h4" id="rTitle"></h2>
+      <p id="rStage"></p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="metrics">
+      <div class="metric corte">
+        <p class="t-label">Punto de corte</p>
+        <p class="big" id="mCorte">—</p>
+        <p class="cap" id="mCorteCap"></p>
+      </div>
+      <div class="metric firmeza">
+        <p class="t-label">Índice de firmeza</p>
+        <p class="big" id="mFirm">—</p>
+        <p class="cap" id="mFirmCap"></p>
+      </div>
+    </div>
+
+    <div class="funnel" id="funnel"></div>
+    <div class="legend">
+      <span><i style="background:var(--green)"></i>Dato firme</span>
+      <span><i style="background:var(--amber)"></i>Estimación</span>
+      <span><i style="background:var(--amber);box-shadow:0 0 0 1.5px var(--amber)"></i>Rango amplio o sin versión única</span>
+      <span><i style="background:var(--red)"></i>Sin dato</span>
+    </div>
+
+    <div class="ctx">
+      <p class="t-label">Qué significa tu punto de corte</p>
+      <div id="ctxBody"></div>
+    </div>
+
+    <div class="ctx gov" id="govBox">
+      <p class="t-label">Qué significa la firmeza de tus datos</p>
+      <div id="govBody"></div>
+    </div>
+
+    <div class="block">
+      <div class="card inverse">
+        <h3 class="t-h3">Ya sabes dónde se rompe.<br>Ahora, cómo se ve cuando funciona.</h3>
+        <p class="sub">Te enviamos el análisis de esta situación: qué la produce, qué indicadores la confirman, y cómo opera una empresa que ya la tiene resuelta.</p>
+        <form onsubmit="return sendEmail(event)">
+          <div class="field-row">
+            <input type="email" id="email" placeholder="tucorreo@empresa.com" required>
+            <button class="btn amber" type="submit">Enviármelo</button>
+          </div>
+        </form>
+        <div class="ok-msg" id="okMsg"><span>✓</span> Listo. Te llega en los próximos minutos.</div>
+        <p class="fineprint">Un correo con el análisis. Si después necesitas más, lo pides tú.</p>
+      </div>
+    </div>
+
+    <div class="block">
+      <h3 class="t-h3">El siguiente paso</h3>
+      <p class="sub" id="nextText"></p>
+      <div class="card">
+        <h3 class="t-h3" style="font-size:1.125rem">Auditoría del motor de ingresos</h3>
+        <p class="sub">45 minutos donde revisamos tu operación comercial completa, no solo el punto de corte, y planteamos las soluciones concretas para tu caso.</p>
+        <a class="btn amber block" id="calLink" href="#" target="_blank" rel="noopener">Agendar auditoría gratis <span class="arrow">→</span></a>
+      </div>
+    </div>
+
+    <div class="block" style="border-top:0;padding-top:0">
+      <button class="btn ghost" onclick="restart()">Volver a empezar</button>
+    </div>
+    <footer>Diagnóstico en Reversa · Beyond B</footer>
+  </div>
+</section>
+
+<script>
+const CONFIG = {
+  calendarUrl: "https://calendar.app.google/PENDIENTE",
+  formEndpoint: ""
+};
+
+/* Umbral: un rango más amplio que 2x su extremo menor no es una estimación */
+const RANGE_THRESHOLD = 2;
+
+const Q = [
+  { stage:"Resultado", t:"¿Cuánto cerraste frente a tu meta del último trimestre?",
+    h:"El número, no la sensación.",
+    d:"<b>Meta</b>: la cifra de facturación que esperabas alcanzar, definida antes de que empezara el trimestre." },
+  { stage:"Cierre", t:"¿Cuál es tu tasa de cierre?",
+    h:"De cada diez oportunidades reales, cuántas terminan en venta.",
+    d:"<b>Tasa de cierre</b>: el porcentaje de oportunidades que terminan en venta. Si de 20 oportunidades cerraste 4, tu tasa es 20%." },
+  { stage:"Pipeline", t:"¿Cuántas oportunidades reales trabajaste?",
+    h:"En el último trimestre.",
+    d:"<b>Oportunidad</b>: un prospecto con interlocutor identificado, una necesidad concreta y una conversación activa. No es lo mismo que un contacto o una tarjeta guardada." },
+  { stage:"Calificación", t:"¿Cuál es tu conversión de lead a oportunidad?",
+    h:"De cada diez leads, cuántos se convierten en oportunidad real.",
+    d:"<b>Lead</b>: alguien que mostró interés y dejó un dato de contacto. Se convierte en <b>oportunidad</b> cuando confirmas que tiene la necesidad, el presupuesto y la intención de resolverlo." },
+  { stage:"Criterio", type:"qual", t:"¿Con qué criterio decides que un lead está calificado?",
+    h:"Y si ese criterio es el mismo para todo tu equipo.",
+    d:"<b>Criterio de calificación</b>: las condiciones que un lead debe cumplir para que valga la pena invertirle tiempo comercial. Si cada vendedor usa el suyo, no hay criterio." },
+  { stage:"Demanda", t:"¿Qué porcentaje de tus leads puedes atribuir a una fuente concreta?",
+    h:"Saber de dónde vino cada uno, no solo cuántos entraron.",
+    d:"<b>Fuente</b>: el canal que originó el lead. Referido, LinkedIn, web, evento, llamada en frío. Si no puedes atribuirlo, no puedes repetirlo." },
+  { stage:"Actividad", t:"¿Cuántas acciones de venta se ejecutaron por oportunidad?",
+    h:"En promedio, por cada oportunidad trabajada.",
+    d:"<b>Acción de venta</b>: cada contacto registrado con el prospecto. Llamada, correo, reunión, propuesta enviada, mensaje de seguimiento." },
+  { stage:"Control", type:"qual", t:"¿Quién verifica que el seguimiento efectivamente ocurra?",
+    h:"No quién debería hacerlo. Quién lo revisa.",
+    d:"<b>Control de ejecución</b>: alguien que revisa, con una frecuencia definida, que las acciones planeadas realmente se hicieron. No es el mismo que las ejecuta." }
+];
+
+const OPTS_NUM = [
+  { label:"Lo sé con precisión",   sub:"Tengo el dato exacto o puedo consultarlo ahora", v:"exact" },
+  { label:"Lo sé aproximadamente", sub:"No tengo el dato exacto, pero sé entre qué valores está", v:"approx" },
+  { label:"No lo sé",              sub:"No tengo forma de saberlo hoy", v:"unknown" }
+];
+
+/* Preguntas cualitativas: la opción intermedia equivale a un rango demasiado
+   amplio — el criterio existe, pero no es reproducible entre personas. */
+const OPTS_QUAL = [
+  { label:"Está definido y es el mismo para todos", sub:"Cualquiera del equipo respondería igual", v:"exact" },
+  { label:"Existe, pero cada quien lo aplica a su manera", sub:"No hay una versión única acordada", v:"weakq" },
+  { label:"No está definido", sub:"Se resuelve caso por caso", v:"unknown" }
+];
+
+const CTX = [
+{ title:"Resultado", next:"Antes de medir nada más, hay que construir la referencia: qué esperabas facturar y contra qué se compara lo que pasó.", body:[
+  "Si no existe una cifra de meta contra la cual medir el cierre, el resultado comercial se evalúa por sensación. Hubo un buen trimestre o un mal trimestre, pero no hay una distancia medible entre lo esperado y lo ocurrido.",
+  "El efecto práctico es que ningún indicador posterior tiene con qué compararse. Una tasa de cierre del veinte por ciento no es buena ni mala en abstracto: solo significa algo frente a un objetivo."
+]},
+{ title:"Cierre", next:"El punto de partida es separar el problema de volumen del problema de calidad. Sin esa distinción, la solución por defecto siempre será pedir más leads.", body:[
+  "Conoces el resultado, pero no la proporción que lo produjo. Eso significa que no puedes distinguir entre un problema de volumen y uno de calidad: si cierras poco, no sabes si es porque entran pocas oportunidades o porque las que entran no avanzan.",
+  "Cuando esa distinción no existe, la decisión más común es pedir más leads. Si el problema estaba en la conversión, el resultado es un equipo más ocupado trabajando el mismo porcentaje sobre un volumen mayor, con más costo."
+]},
+{ title:"Pipeline", next:"Lo primero es que el pipeline exista como objeto medible fuera de la cabeza del equipo.", body:[
+  "Sin el número de oportunidades reales, el pipeline no existe como objeto medible. Lo que hay es un conjunto de conversaciones en curso que vive en la memoria del equipo o en una hoja que cada quien actualiza cuando se acuerda.",
+  "La consecuencia directa es que desaparece la capacidad de pronosticar. No se puede anticipar el cierre del próximo trimestre porque no se sabe cuánto hay realmente en juego hoy."
+]},
+{ title:"Calificación", next:"El punto de entrada es medir cuántos de los que entran llegan a ser oportunidad real, y por qué se caen los demás.", body:[
+  "Sin la conversión de lead a oportunidad, no sabes si tu problema está en atraer o en calificar. Puedes estar generando volumen suficiente y perdiéndolo en el filtro, o atrayendo al perfil equivocado desde el principio.",
+  "Las dos situaciones se ven igual desde el resultado final, pero exigen soluciones opuestas: una se resuelve mejorando el mensaje y la otra cambiando la fuente."
+]},
+{ title:"Criterio", next:"El punto de entrada no es un dato, es una definición: qué cuenta como oportunidad calificada, acordada por todo el equipo.", body:[
+  "Aquí la cadena se rompe en el criterio, no en el dato. Si no hay una definición compartida de qué hace que un lead esté calificado, cada persona del equipo califica según su propia intuición.",
+  "El resultado es un pipeline que mezcla cosas que no son comparables. Dos vendedores reportan cinco oportunidades cada uno, pero esas diez no significan lo mismo, y cualquier promedio calculado sobre ellas es engañoso."
+]},
+{ title:"Demanda", next:"Lo primero es reconstruir el origen de lo que ya entró. Sin eso, no hay palanca que se pueda accionar a voluntad.", body:[
+  "No saber de dónde vienen los leads implica que no puedes repetir deliberadamente lo que funciona. El crecimiento pasa a depender de que las mismas fuentes sigan produciendo por su cuenta, y en empresas en esta etapa esa fuente casi siempre es el referido.",
+  "Mientras el referido fluye, el sistema parece funcionar. Cuando baja, no hay palanca que activar, porque no se sabe cuál accionar. Esa es la forma más común de la caída que no se puede anticipar ni explicar."
+]},
+{ title:"Actividad", next:"El primer paso es hacer visible qué se hizo con cada oportunidad, no solo cuántas hubo.", body:[
+  "Sabes cuántas oportunidades hay, pero no qué se hizo con ellas. Eso convierte el trabajo comercial en una caja negra: entra una oportunidad, sale un resultado, y en el medio no hay registro.",
+  "El costo aparece cuando algo no avanza. Sin saber cuántas acciones recibió esa oportunidad, no hay forma de distinguir entre un prospecto que no tenía interés y uno al que simplemente nadie volvió a contactar."
+]},
+{ title:"Control", next:"El punto de entrada no es medir más. Es cerrar el ciclo: que alguien revise la ejecución mientras ocurre, no después.", body:[
+  "Conoces los números, tienes proceso definido, pero nadie verifica que lo planeado efectivamente ocurra. Este es el punto de ruptura más frecuente en empresas que ya midieron todo lo anterior.",
+  "Un proceso que no se controla no es un proceso, es una intención. Los indicadores describen correctamente lo que pasó, pero no permiten intervenir mientras está pasando."
+]}
+];
+
+const CTX_FULL = {
+  title:"Cadena completa",
+  next:"El siguiente nivel no es medir más. Es contrastar: saber si esos números están donde deberían para tu tamaño y tu sector.",
+  body:[
+  "Respondiste la cadena completa sin vacíos. Eso ubica tu operación por encima de la mayoría de empresas B2B en etapa comercial no consolidada, donde la cadena suele romperse antes del cuarto eslabón.",
+  "Cuando la información existe de punta a punta, el problema deja de ser de visibilidad y pasa a ser de referencia. Saber que tu tasa de cierre es del dieciocho por ciento no dice nada por sí solo. Dice mucho cuando sabes cuánto es normal para una empresa de tu tamaño."
+]};
+
+/* --- ITERACIÓN 4 · gobierno de datos --- */
+function govText(exact, approx, weak, unknown, weakNum, weakQual){
+  const total = Q.length;
+  if (weak >= 3){
+    const first = weakQual > 0 && weakNum > 0
+      ? "Tienes " + weakNum + " estimaciones con rangos tan amplios que no son estimaciones, y " + weakQual + " definiciones que existen pero que cada persona aplica a su manera. Son el mismo problema en dos formas: información que no se reproduce igual dos veces."
+      : (weakQual >= 3
+        ? "Tus definiciones existen, pero no hay una versión única de ellas. Un criterio que cada persona aplica a su manera no es un criterio: es una convención informal que cambia según quién la ejecute."
+        : "De tus estimaciones, " + weakNum + " tienen rangos tan amplios que no son estimaciones: son ausencias de registro con forma de dato. Decir que ejecutas entre tres y doce acciones por oportunidad no describe tu operación, describe que nadie la está midiendo.");
+    return [ first,
+      "Esto es un problema de gobierno de datos, no de visibilidad. La información existe en algún lugar, pero no en un sistema que produzca el mismo resultado mañana. Cualquier decisión tomada sobre ella es, en la práctica, una decisión tomada sobre una intuición."
+    ];
+  }
+  if (approx + weak >= Math.ceil(total/2)) return [
+    "Respondiste " + (approx+weak) + " de " + total + " preguntas con estimaciones. La información existe, pero no está consolidada: vive en la memoria de alguien o repartida entre hojas de cálculo que nadie reconcilia.",
+    "El síntoma no es que falte el dato, es que no hay una fuente única que lo produzca igual cada vez. Mientras eso siga así, dos personas de tu equipo pueden reportar cifras distintas sobre el mismo trimestre y ambas tener razón."
+  ];
+  if (approx + weak > 0) return [
+    "Tienes " + exact + " datos firmes y " + (approx+weak) + " estimaciones. La base es sólida: la mayoría de tu operación está medida con precisión.",
+    "Las estimaciones marcan dónde conviene ordenar primero. No son un problema en sí mismas, pero cada una es un punto donde la decisión depende de que alguien recuerde bien."
+  ];
+  return [
+    "Respondiste todo con datos firmes. Tu operación está medida, no estimada, y eso es poco común en empresas de esta etapa.",
+    "El trabajo que sigue no es de captura sino de análisis: usar esos números para anticipar, no solo para reportar."
+  ];
+}
+
+/* ================= estado ================= */
+let i = 0;
+let answers = [];
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  const el = document.getElementById(id);
+  void el.offsetWidth;
+  el.classList.add('on');
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+function start(){ i=0; answers=[]; render(); show('question'); }
+
+function render(){
+  const q = Q[i];
+  document.getElementById('stage').textContent = q.stage;
+  document.getElementById('counter').textContent = String(i+1).padStart(2,'0') + ' / ' + String(Q.length).padStart(2,'0');
+  document.getElementById('prog').style.width = (i/Q.length*100) + '%';
+  document.getElementById('qtext').textContent = q.t;
+  document.getElementById('qhint').textContent = q.h;
+  document.getElementById('define').innerHTML = q.d;
+  document.getElementById('backBtn').style.visibility = i===0 ? 'hidden' : 'visible';
+  document.getElementById('rangeBox').innerHTML = '';
+
+  const box = document.getElementById('opts');
+  box.innerHTML = '';
+  const set = q.type === 'qual' ? OPTS_QUAL : OPTS_NUM;
+  set.forEach(o=>{
+    const b = document.createElement('button');
+    b.className = 'opt'; b.type = 'button';
+    b.innerHTML = '<span class="dot"></span><span>' + o.label + '<span class="sublabel">' + o.sub + '</span></span>';
+    b.onclick = ()=>choose(o.v);
+    box.appendChild(b);
+  });
+}
+
+function choose(v){
+  if (v === 'approx') return askRange();          // solo preguntas numéricas
+  if (v === 'weakq'){                              // cualitativa inconsistente
+    answers[i] = { v:'weak', qual:true };
+    return advance();
+  }
+  answers[i] = { v: v };
+  advance();
+}
+
+/* --- ITERACIÓN 3 · cualificador de rango --- */
+function askRange(){
+  const box = document.getElementById('rangeBox');
+  box.innerHTML =
+    '<div class="range">' +
+      '<p class="q">¿Entre qué dos valores está? Escríbelos aunque sea de memoria.</p>' +
+      '<div class="row">' +
+        '<input type="number" id="rMin" placeholder="mín" inputmode="decimal">' +
+        '<span class="sep">y</span>' +
+        '<input type="number" id="rMax" placeholder="máx" inputmode="decimal">' +
+        '<button class="btn sm amber" type="button" onclick="saveRange()">Continuar</button>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('rMin').focus();
+}
+
+function saveRange(){
+  const mn = parseFloat(document.getElementById('rMin').value);
+  const mx = parseFloat(document.getElementById('rMax').value);
+  if (isNaN(mn) || isNaN(mx)) { document.getElementById('rMin').focus(); return; }
+  const lo = Math.min(mn,mx), hi = Math.max(mn,mx);
+  const ratio = lo > 0 ? hi/lo : Infinity;
+  answers[i] = { v: ratio > RANGE_THRESHOLD ? 'weak' : 'approx', lo: lo, hi: hi, ratio: ratio };
+  advance();
+}
+
+function advance(){
+  if (i === Q.length-1) return finish();
+  i++; render();
+}
+
+function back(){ if(i>0){ i--; render(); } }
+
+/* ================= resultado ================= */
+function finish(){
+  const firstGap = answers.findIndex(a => a.v === 'unknown');
+  const full = firstGap === -1;
+  const c = full ? CTX_FULL : CTX[firstGap];
+
+  const exact   = answers.filter(a=>a.v==='exact').length;
+  const approx  = answers.filter(a=>a.v==='approx').length;
+  const weakArr = answers.filter(a=>a.v==='weak');
+  const weak    = weakArr.length;
+  const weakQual= weakArr.filter(a=>a.qual).length;
+  const weakNum = weak - weakQual;
+  const unknown = answers.filter(a=>a.v==='unknown').length;
+  const firmeza = Math.round((exact + approx*0.5) / Q.length * 100);
+
+  document.getElementById('rTitle').textContent = full ? 'Recorriste la cadena completa.' : 'Tu cadena se rompe aquí.';
+  document.getElementById('rStage').textContent = full ? 'Sin vacíos de información' : c.title;
+
+  document.getElementById('mCorte').textContent = full ? '—' : String(firstGap+1).padStart(2,'0');
+  document.getElementById('mCorteCap').textContent = full
+    ? 'No hay eslabones sin dato.'
+    : 'Primer eslabón sin dato: ' + c.title + '.';
+  document.getElementById('mFirm').textContent = firmeza + '%';
+  document.getElementById('mFirmCap').textContent =
+    exact + ' firmes · ' + approx + ' estimados · ' + weak + ' rangos amplios · ' + unknown + ' sin dato';
+
+  // embudo completo
+  const f = document.getElementById('funnel');
+  f.innerHTML = '';
+  Q.forEach((q,n)=>{
+    const a = answers[n] || { v:'unknown' };
+    const el = document.createElement('div');
+    el.className = 'step ' + a.v;
+    el.style.animationDelay = (n*55+90) + 'ms';
+    let badge = '';
+    if (a.v === 'weak')    badge = a.qual
+                             ? '<span class="badge">sin versión única</span>'
+                             : '<span class="badge">rango ' + a.lo + '–' + a.hi + '</span>';
+    if (a.v === 'approx')  badge = '<span class="badge">' + a.lo + '–' + a.hi + '</span>';
+    if (a.v === 'unknown') badge = '<span class="badge">sin dato</span>';
+    el.innerHTML = '<span class="n">'+(n+1)+'</span><span><span class="stage-tag">'+q.stage+'</span>'+q.t+badge+'</span>';
+    f.appendChild(el);
+  });
+
+  const cb = document.getElementById('ctxBody');
+  cb.innerHTML = '';
+  c.body.forEach(p=>{ const el=document.createElement('p'); el.textContent=p; cb.appendChild(el); });
+
+  const gb = document.getElementById('govBody');
+  gb.innerHTML = '';
+  govText(exact, approx, weak, unknown, weakNum, weakQual).forEach(p=>{ const el=document.createElement('p'); el.textContent=p; gb.appendChild(el); });
+
+  document.getElementById('nextText').textContent = c.next;
+  document.getElementById('calLink').href = CONFIG.calendarUrl;
+  document.getElementById('okMsg').classList.remove('on');
+  document.getElementById('email').value = '';
+  show('result');
+}
+
+function sendEmail(e){
+  e.preventDefault();
+  const payload = { email: document.getElementById('email').value, respuestas: answers };
+  if (CONFIG.formEndpoint){
+    fetch(CONFIG.formEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
+  } else { console.log('[mock · sin endpoint]', payload); }
+  document.getElementById('okMsg').classList.add('on');
+  return false;
+}
+
+function restart(){ show('intro'); }
+</script>
+</body>
+</html>
